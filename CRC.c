@@ -1,57 +1,79 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#define POLYNOMIAL 0xEDB88320
+#define N 16
 
-unsigned int crc32(unsigned char *data, int length) {
-    unsigned int crc = 0xFFFFFFFF;
-    int i, j;
+int main() {
+    int i, j, k;
+    char data[N], key[N], temp[N], crc[N];
 
-    for (i = 0; i < length; i++) {
-        crc ^= data[i];
-        for (j = 0; j < 8; j++) {
-            if (crc & 1) {
-                crc = (crc >> 1) ^ POLYNOMIAL;
-            } else {
-                crc >>= 1;
+    printf("Enter data: ");
+    scanf("%s", data);
+
+    printf("Enter key: ");
+    scanf("%s", key);
+
+    strcpy(temp, data);
+
+    for(i = 0; i < strlen(key) - 1; i++) {
+        strcat(temp, "0");
+    }
+
+    for(i = 0; i < strlen(key); i++) {
+        crc[i] = temp[i];
+    }
+
+    do {
+        if(crc[0] == '1') {
+            for(j = 1; j < strlen(key); j++) {
+                crc[j - 1] = ((crc[j] == key[j]) ? '0' : '1');
             }
+        } else {
+            for(j = 1; j < strlen(key); j++) {
+                crc[j - 1] = crc[j];
+            }
+        }
+        crc[j - 1] = temp[i++];
+    } while(i <= strlen(temp));
+
+    printf("CRC bits: %s\n", crc);
+
+    strcpy(temp, data);
+    strcat(temp, crc);
+
+    printf("Transmitted data: %s\n", temp);
+
+    printf("Enter received data: ");
+    scanf("%s", temp);
+
+    for(i = 0; i < strlen(key) - 1; i++) {
+        strcat(temp, "0");
+    }
+
+    for(i = 0; i < strlen(key); i++) {
+        crc[i] = temp[i];
+    }
+
+    do {
+        if(crc[0] == '1') {
+            for(j = 1; j < strlen(key); j++) {
+                crc[j - 1] = ((crc[j] == key[j]) ? '0' : '1');
+            }
+        } else {
+            for(j = 1; j < strlen(key); j++) {
+                crc[j - 1] = crc[j];
+            }
+        }
+        crc[j - 1] = temp[i++];
+    } while(i <= strlen(temp));
+
+    for(i = 0; i < strlen(crc); i++) {
+        if(crc[i] == '1') {
+            printf("Error detected\n");
+            return 0;
         }
     }
 
-    return crc ^ 0xFFFFFFFF;
-}
-
-void print_data(unsigned char *data, int length) {
-    int i;
-    for (i = 0; i < length; i++) {
-        printf("%02X ", data[i]);
-    }
-    printf("\n");
-}
-
-int main() {
-    unsigned char data[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
-    int length = sizeof(data) / sizeof(data[0]);
-    printf("Original data: ");
-    print_data(data, length);
-
-    unsigned int crc = crc32(data, length);
-    printf("CRC: %08X\n", crc);
-
-    // introduce error
-    data[2] ^= 0xFF;
-    printf("Corrupted data: ");
-    print_data(data, length);
-
-    unsigned int crc_check = crc32(data, length);
-    printf("CRC check: %08X\n", crc_check);
-
-    if (crc_check == crc) {
-        printf("Data transmission successful.\n");
-    } else {
-        printf("Data transmission failed.\n");
-    }
-
+    printf("No errors detected\n");
     return 0;
 }
